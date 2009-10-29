@@ -1,8 +1,6 @@
 """
-tablegen generates WMBR's operating tables. It consists of one function:
+tablegen generates WMBR's operations tables. It consists of one function:
 make_day_tables
-
-See the make_day_tables doc for exact usage. 
 """
 
 import reportlab
@@ -13,13 +11,13 @@ from reportlab.lib.units import inch
 from datetime import datetime
 
 ########### table parameters 
-NOTES = 'NOTES' # this variable enforces consistency between the next 2 statements
+NOTES = 'NOTES' 
 HEADER_ROW = [
     '\n\nCHAN: MIN: NOM: MAX: UNITS:'.replace(' ', '\n'),
     'FWD. POWER 3 90 100 105 %'.replace(' ', '\n'),
     'RFL. POWER 4 0 0 10 %'.replace(' ', '\n'),
     'ROOM TEMP 6 50 75 95 F'.replace(' ', '\n'),
-    NOTES,
+    NOTES, # to enforce consistency between this and the next statement
     'Time\nChecked',
     'Checked\nBy'
 ]
@@ -31,10 +29,11 @@ HEADER_ROW_HEIGHT = None
 HOUR_ROW_HEIGHT = 40
 EVENT_ROW_HEIGHT = 15
 NOTES_COL_WIDTH = 4*inch
-COL_WIDTHS = [None]*NOTES_IDX + [NOTES_COL_WIDTH] + [None]*(NUM_COLS - NOTES_IDX - 1)
+COL_WIDTHS = \
+    [None]*NOTES_IDX + [NOTES_COL_WIDTH] + [None]*(NUM_COLS - NOTES_IDX - 1)
 EVENT_COL_SPAN = 4
 
-# note: reportlab decided cell coordinates should be column-row, aka "A1" style. 
+# note: reportlab uses column-row cell coordinates, aka excel "A1" style. 
 TABLE_BASE_STYLE = [
     ('VALIGN', (0,0), (-1,0), 'TOP'),
     ('ALIGN', (0,0), (-1,0), 'CENTER'),
@@ -49,19 +48,19 @@ TABLE_BASE_STYLE = [
 def make_day_tables(events):
     """
     Given a sequence of a day's events, tablegen returns a list of two Table
-    objects that, taken together, represent operating logs for that day. 
+    objects that, taken together, represent operations for that day. 
     
     It returns two tables because each one takes up a full page.  
     
     Usage: 
     
-    # in this example, the day has three events: turn off transmitter at 3:05am, 
-    # test EAS at 5:45, and check tower lights at 6:17pm. 
-    # Use whatever capitalization the logs require. 
+    # consider a day with three events: turn off transmitter at 3:05am, 
+    # test EAS at 5:45, and check tower lights at 6:17pm. to generate 
+    # the day's operating table: 
     >>> make_day_tables([
     ... (datetime(2009, 10, 28, 3, 5),  'TURN OFF TRANSMITTER'),
-    ... (datetime(2009, 10, 28, 5, 45), 'TEST EAS LIGHTS AND TURN ON TRANSMITTER'),
-    ... (datetime(2009, 10, 28, 18,17),  'CHECK TOWER LIGHTS: READING =')     
+    ... (datetime(2009, 10, 28, 5, 45), 'TEST EAS LIGHTS'),
+    ... (datetime(2009, 10, 28, 18,17), 'CHECK TOWER LIGHTS: READING =')     
     ... ])            
     [<Table>, <Table>]     
     """
@@ -99,10 +98,10 @@ def make_day_tables(events):
             for event in events:
                 dt, text = event # dt is a datetime object
                 if hour == dt.hour:
-                    # minor nitpic: dt.strftime forces zero padding on the hour. 
+                    # minor nitpic: dt.strftime forces zero padding. 
                     # use regular ol' sprintf instead
                     display_time = "%d:%02d" % (dt.hour, dt.minute) 
-                    add_event_row(display_time, text, rows, row_heights, styles) 
+                    add_event_row(display_time,text,rows,row_heights,styles) 
                             
         table = Table(rows, COL_WIDTHS, row_heights)
         table.setStyle(styles)
@@ -130,10 +129,12 @@ def main():
     story.extend(make_day_tables([
         (datetime(2009, 10, 28, 0, 0),   'DROP THE JAZZ, GRATEFUL DEAD'),        
         (datetime(2009, 10, 28, 3, 5),   'TURN OFF TRANSMITTER'),
-        (datetime(2009, 10, 28, 5, 45),  'TEST EAS LIGHTS AND TURN ON TRANSMITTER'),
+        (datetime(2009, 10, 28, 5, 45),  
+            'TEST EAS LIGHTS AND TURN ON TRANSMITTER'),
         (datetime(2009, 10, 28, 11, 45), 'MY ASS IS ON FIRE'),
         (datetime(2009, 10, 28, 12, 00), 'TEST YOUR MOM'),
-        (datetime(2009, 10, 28, 12, 59), 'WINNERS ARE LOSERS WITH A NEW ATTITUDE'),
+        (datetime(2009, 10, 28, 12, 59), 
+            'WINNERS ARE LOSERS WITH A NEW ATTITUDE'),
         (datetime(2009, 10, 28, 12, 59), 'ROCK WITH IT'),                 
         (datetime(2009, 10, 28, 13, 00), 'STOP PLAYING METALLICA, FOOL'),
         (datetime(2009, 10, 28, 18,17),  'CHECK TOWER LIGHTS: READING ='),
