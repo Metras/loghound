@@ -34,50 +34,50 @@ for date in dates:
 
 import urllib
 
-sched_raw = urllib.urlopen('http://wmbr.org/cgi-bin/prog_log_input').read()
-
-# remove /* comments */
-while sched_raw.find("/*") > -1:
-  sidx = sched_raw       .find("/*")
-  eidx = sched_raw[sidx:].find("*/")
-  if eidx == -1:
-    break
-  eidx += sidx + 2
-  sched_raw = sched_raw[:sidx] + sched_raw[eidx:]
-
-sched_raw = ("".join(sched_raw.split("\\"))).split('\n')
-
-schedule = {}
-lidx = 0
-while lidx < len(sched_raw):
-  line = sched_raw[lidx]
-  if line in ['Sunday:', 'Monday:', 'Tuesday:', 'Wednesday:', 'Thursday:', 'Friday:', 'Saturday:']:
-    day = line[:-1]
-    schedule[day] = []
-  elif line[3:13] == "first_show":
-    schedule[day].append(("first_show", line[14:]))
-  elif line[3: 7] == "show":
-    args = line[3:].split("   ")
-    schedule[day].append(("show", args[1], args[2][2:-1].split('","')))
-  elif line[3:10] == "signoff":
-    schedule[day].append(("signoff",))
-  elif line[3: 9] == "signon":
-    schedule[day].append(("signon", line[9:].strip()))
-  elif line       == "end":
-    pass
-  elif line[ : 9] == "alt_shows":
-    schedule[day].append(("alt_show", line[9:19].strip(), sched_raw[lidx][19:-1].split('","'), sched_raw[lidx+1][19:-1].split('","')))
-    lidx += 1
-  elif len(line.strip()) == 0:
-    pass # we don't need no empty lines
-  else:
-    print "?? '%s'" % line
-  lidx += 1
-
-for i in schedule.keys():
-  print i
-  for j in schedule[i]:
-    print "", j
+#sched_raw = urllib.urlopen('http://wmbr.org/cgi-bin/prog_log_input').read()
+#
+## remove /* comments */
+#while sched_raw.find("/*") > -1:
+#  sidx = sched_raw       .find("/*")
+#  eidx = sched_raw[sidx:].find("*/")
+#  if eidx == -1:
+#    break
+#  eidx += sidx + 2
+#  sched_raw = sched_raw[:sidx] + sched_raw[eidx:]
+#
+#sched_raw = ("".join(sched_raw.split("\\"))).split('\n')
+#
+#schedule = {}
+#lidx = 0
+#while lidx < len(sched_raw):
+#  line = sched_raw[lidx]
+#  if line in ['Sunday:', 'Monday:', 'Tuesday:', 'Wednesday:', 'Thursday:', 'Friday:', 'Saturday:']:
+#    day = line[:-1]
+#    schedule[day] = []
+#  elif line[3:13] == "first_show":
+#    schedule[day].append(("first_show", line[14:]))
+#  elif line[3: 7] == "show":
+#    args = line[3:].split("   ")
+#    schedule[day].append(("show", args[1], args[2][2:-1].split('","')))
+#  elif line[3:10] == "signoff":
+#    schedule[day].append(("signoff",))
+#  elif line[3: 9] == "signon":
+#    schedule[day].append(("signon", line[9:].strip()))
+#  elif line       == "end":
+#    pass
+#  elif line[ : 9] == "alt_shows":
+#    schedule[day].append(("alt_show", line[9:19].strip(), sched_raw[lidx][19:-1].split('","'), sched_raw[lidx+1][19:-1].split('","')))
+#    lidx += 1
+#  elif len(line.strip()) == 0:
+#    pass # we don't need no empty lines
+#  else:
+#    print "?? '%s'" % line
+#  lidx += 1
+#
+#for i in schedule.keys():
+#  print i
+#  for j in schedule[i]:
+#    print "", j
 
 # THIRD, compute other events that will occur on a particular day
 
@@ -88,7 +88,8 @@ twilights = map(twilight.twilight, dates)
 # FOURTH, produce the pdf
 
 import os
-from reportlab.platypus import BaseDocTemplate, Frame, Paragraph, NextPageTemplate, PageBreak, PageTemplate, Table, TableStyle
+from reportlab.platypus import BaseDocTemplate, Frame, NextPageTemplate, PageBreak, PageTemplate, Table, TableStyle
+from reportlab.platypus.para import Paragraph
 from reportlab.platypus import flowables
 from reportlab.lib import colors
 from reportlab.lib.units import inch
@@ -125,23 +126,7 @@ frameRules = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='
 #normal frame as for SimpleFlowDocument
 frameT = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
 
-Elements.append(Paragraph("""
-<para alignment=CENTER spaceBefore=24 spaceAfter=12 fontSize=12><b>WMBR</b> is a registered service mark of the Technology Broadcasting Corporation.</para>
-""", styles['Normal']))
-Elements.append(Paragraph("""
-<para alignment=CENTER spaceBefore=40 spaceAfter=12 fontSize=18>“RULES OF THE LOGS”</para>
-""", styles['Normal']))
-Elements.append(Paragraph("""
-<para alignment=CENTER fontSize=12>Questions on these rules should be referred to the Chief Engineer.</para>
-""", styles['Normal']))
-# rules
-for para in open("op_title.xml"):
-  Elements.append(Paragraph(
-    "<para bulletIndent=10 leading=12 leftIndent=25 spaceBefore=6 spaceAfter=12 rightIndent=10 fontSize=12><bullet><seq id='rulenum'/>.</bullet>%s</para>" % para,
-    styles['Normal']))
-Elements.append(Paragraph("""
-<para alignment=CENTER spaceBefore=24 spaceAfter=12 fontSize=15>The Emergency Technical Staff:</para>
-""", styles['Normal']))
+Elements.append(Paragraph("".join(open("op_title.xml").readlines()), styles['Normal']))
 data = [
     ["Henry Holtzman", "Home: 617-327-1298", "Work: 617-253-0319"],
     ["Ted Young",      "Home: 617-776-7473", "Cell: 617-447-8439"] ]
@@ -154,7 +139,7 @@ def SigPage():
             "SIGNATURE",
             "TIME OFF",
             "SIGNATURE"]
-         ] + [[" "]*6]*22
+         ] + [[None]*6]*22
   tableWidths = [2*inch,None,None,1.7*inch,None,1.7*inch]
   tableHeights = [None] + [30]*22
   t = Table(data, tableWidths, tableHeights)
