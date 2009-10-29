@@ -105,10 +105,11 @@ Elements=[]
 doc = BaseDocTemplate("basedoc.pdf",showBoundary=0,allowSplitting=0,leftMargin=0.5*inch,rightMargin=0.5*inch)
 
 def foot(canvas,doc):
+    today = datetime.date(doc.docEval("currentYear"), doc.docEval("currentMonth"), doc.docEval("currentDay"))
     canvas.saveState()
     canvas.setFont('Times-Roman',19)
-    canvas.drawString(inch, 0.75 * inch, "WMBR Operating Log")
-    canvas.drawRightString(PAGE_WIDTH-1.25*inch, 0.75*inch, "%02d/%02d/%d" % (doc.docEval("currentMonth"), doc.docEval("currentDay"), doc.docEval("currentYear")))
+    canvas.drawString(0.3*inch, PAGE_HEIGHT-0.7*inch, "WMBR Operating Log")
+    canvas.drawRightString(PAGE_WIDTH-0.5*inch, PAGE_HEIGHT-0.7*inch, today.strftime("%A, %b %d, %Y"))
     canvas.restoreState()
 
 def title(canvas,doc):
@@ -160,6 +161,8 @@ def SigPage():
   t.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,0), 'TOP'),
         ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('ALIGN', (3,0), (3,0), 'RIGHT'),
+        ('ALIGN', (5,0), (5,0), 'RIGHT'),
         ('GRID', (0,0), (1,-1), .6, colors.black),
         ('LINEABOVE', (2,0), (3,-1), .6, colors.black),
         ('LINEAFTER', (3,0), (3,-1), .6, colors.black),
@@ -167,7 +170,6 @@ def SigPage():
         ('LINEAFTER', (5,0), (5,-1), .6, colors.black),
         ('BOX',(0,0),(-1,-1),2,colors.black),
         ('BACKGROUND',(0,0),(-1,0),colors.lightgrey),
-        ('ALIGN', (0,1), (0, -1), 'CENTER'),
         ('VALIGN', (0,1), (0, -1), 'MIDDLE'),
     ]))
   return t
