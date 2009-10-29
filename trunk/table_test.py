@@ -23,7 +23,7 @@ def myFirstPage(canvas, doc):
 def myLaterPages(canvas, doc): 
     canvas.saveState() 
     canvas.setFont('Times-Roman',9) 
-    canvas.drawString(inch, 0.75 * inch, "Page %d %s" % (doc.page, pageinfo)) 
+    canvas.drawString(inch, 0.75 * inch, "Page %d %s" % (doc.page, pageinfo))   
     canvas.restoreState() 
 
 doc = SimpleDocTemplate("phello.pdf") 
