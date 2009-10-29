@@ -19,7 +19,6 @@ def myFirstPage(canvas, doc):
     canvas.drawString(inch, 0.75 * inch, "First Page / %s" % pageinfo) 
     canvas.restoreState() 
 
-
 def myLaterPages(canvas, doc): 
     canvas.saveState() 
     canvas.setFont('Times-Roman',9) 

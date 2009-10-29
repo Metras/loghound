@@ -88,8 +88,9 @@ twilights = map(twilight.twilight, dates)
 # FOURTH, produce the pdf
 
 import os
-from reportlab.platypus import BaseDocTemplate, Frame, Paragraph, NextPageTemplate, PageBreak, PageTemplate, Table
+from reportlab.platypus import BaseDocTemplate, Frame, Paragraph, NextPageTemplate, PageBreak, PageTemplate, Table, TableStyle
 from reportlab.platypus import flowables
+from reportlab.lib import colors
 from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.rl_config import defaultPageSize
@@ -145,13 +146,40 @@ data = [
     ["Ted Young",      "Home: 617-776-7473", "Cell: 617-447-8439"] ]
 Elements.append(Table(data, style=[('SIZE',(0,0),(-1,-1),12)]))
 
+def SigPage():
+  data = [ ["CUSTODIAN (print name)",
+            "INITIALS",
+            "TIME ON",
+            "SIGNATURE",
+            "TIME OFF",
+            "SIGNATURE"]
+         ] + [[" "]*6]*22
+  tableWidths = [2*inch,None,None,1.7*inch,None,1.7*inch]
+  tableHeights = [None] + [30]*22
+  t = Table(data, tableWidths, tableHeights)
+  t.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,0), 'TOP'),
+        ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('GRID', (0,0), (1,-1), .6, colors.black),
+        ('LINEABOVE', (2,0), (3,-1), .6, colors.black),
+        ('LINEAFTER', (3,0), (3,-1), .6, colors.black),
+        ('LINEABOVE', (4,0), (5,-1), .6, colors.black),
+        ('LINEAFTER', (5,0), (5,-1), .6, colors.black),
+        ('BOX',(0,0),(-1,-1),2,colors.black),
+        ('BACKGROUND',(0,0),(-1,0),colors.lightgrey),
+        ('ALIGN', (0,1), (0, -1), 'CENTER'),
+        ('VALIGN', (0,1), (0, -1), 'MIDDLE'),
+    ]))
+  return t
+
+
 for date in dates:
   Elements.append(flowables.DocAssign("currentYear",  date.year))
   Elements.append(flowables.DocAssign("currentMonth", date.month))
   Elements.append(flowables.DocAssign("currentDay",   date.day))
   Elements.append(NextPageTemplate('OTALogPage'))
   Elements.append(PageBreak())
-  Elements.append(Paragraph("Moustaches", styles['Normal']))
+  Elements.append(SigPage())
   Elements.append(NextPageTemplate('OpLogPage'))
   Elements.append(PageBreak())
   Elements.append(Paragraph("Moustaches", styles['Normal']))
