@@ -15,17 +15,17 @@ if len(sys.argv) < 4:
 year  = int(sys.argv[1])
 month = int(sys.argv[2])
 day   = int(sys.argv[3])
-today = datetime.date(year,month,day)
-print "year  = %4d"      %   year
-print "month = %4d = %s" % (month, calendar.month_name[month])
-print "day   = %4d = %s" % (  day, calendar.day_name[calendar.weekday(year,month,day)])
+today = datetime.datetime(year,month,day)
+#print "year  = %4d"      %   year
+#print "month = %4d = %s" % (month, calendar.month_name[month])
+#print "day   = %4d = %s" % (  day, calendar.day_name[calendar.weekday(year,month,day)])
 
 if today.weekday() != calendar.SUNDAY:
   print "This is supposed to start on a Sunday.  I assume you know what you're doing."
 
 dates = [today + datetime.timedelta(i) for i in xrange(7)]
-for date in dates:
-  print date
+progEvents = dict([(date,[]) for date in dates])
+opEvents = dict([(date,[]) for date in dates])
 
 # SECOND, download the schedule
 # TODO: get rid of this and just talk to the database or whatever directly if
@@ -34,67 +34,80 @@ for date in dates:
 
 import urllib
 
-#sched_raw = urllib.urlopen('http://wmbr.org/cgi-bin/prog_log_input').read()
-#
-## remove /* comments */
-#while sched_raw.find("/*") > -1:
-#  sidx = sched_raw       .find("/*")
-#  eidx = sched_raw[sidx:].find("*/")
-#  if eidx == -1:
-#    break
-#  eidx += sidx + 2
-#  sched_raw = sched_raw[:sidx] + sched_raw[eidx:]
-#
-#sched_raw = ("".join(sched_raw.split("\\"))).split('\n')
-#
-#schedule = {}
-#lidx = 0
-#while lidx < len(sched_raw):
-#  line = sched_raw[lidx]
-#  if line in ['Sunday:', 'Monday:', 'Tuesday:', 'Wednesday:', 'Thursday:', 'Friday:', 'Saturday:']:
-#    day = line[:-1]
-#    schedule[day] = []
-#  elif line[3:13] == "first_show":
-#    schedule[day].append(("first_show", line[14:]))
-#  elif line[3: 7] == "show":
-#    args = line[3:].split("   ")
-#    schedule[day].append(("show", args[1], args[2][2:-1].split('","')))
-#  elif line[3:10] == "signoff":
-#    schedule[day].append(("signoff",))
-#  elif line[3: 9] == "signon":
-#    schedule[day].append(("signon", line[9:].strip()))
-#  elif line       == "end":
-#    pass
-#  elif line[ : 9] == "alt_shows":
-#    schedule[day].append(("alt_show", line[9:19].strip(), sched_raw[lidx][19:-1].split('","'), sched_raw[lidx+1][19:-1].split('","')))
-#    lidx += 1
-#  elif len(line.strip()) == 0:
-#    pass # we don't need no empty lines
-#  else:
-#    print "?? '%s'" % line
-#  lidx += 1
-#
-#for i in schedule.keys():
-#  print i
-#  for j in schedule[i]:
-#    print "", j
+print "Downloading schedule..."
+sched_raw = urllib.urlopen('http://wmbr.org/cgi-bin/prog_log_input').read()
+print "Done."
+
+# remove /* comments */
+while sched_raw.find("/*") > -1:
+  sidx = sched_raw       .find("/*")
+  eidx = sched_raw[sidx:].find("*/")
+  if eidx == -1:
+    break
+  eidx += sidx + 2
+  sched_raw = sched_raw[:sidx] + sched_raw[eidx:]
+
+sched_raw = ("".join(sched_raw.split("\\"))).split('\n')
+
+schedule = {}
+lidx = 0
+current_time = None
+
+str_to_td = lambda s: datetime.timedelta(0,sum(map(lambda x,y: x*y, [3600,60], map(lambda z: int(z.strip()), s.split(":")))))
+
+while lidx < len(sched_raw):
+  line = sched_raw[lidx]
+  if line in ['Sunday:', 'Monday:', 'Tuesday:', 'Wednesday:', 'Thursday:', 'Friday:', 'Saturday:']:
+    day = line[:-1]
+    schedule[day] = []
+    current_time = datetime.timedelta(0)
+  elif line[3:13] == "first_show":
+    schedule[day].append(("first_show", line[14:]))
+    current_time = str_to_td(line[14:])
+  elif line[3: 7] == "show":
+    args = line[3:].split("   ")
+    schedule[day].append(("show", args[1], args[2][2:-1].split('","')))
+    current_time += str_to_td(args[1])
+  elif line[3:10] == "signoff":
+    schedule[day].append(("signoff",))
+    for date in opEvents:
+      if date.strftime("%A") == day:
+        opEvents[date].append((date + current_time, 'TURN OFF TRANSMITTER'))
+  elif line[3: 9] == "signon":
+    schedule[day].append(("signon", line[9:].strip()))
+    current_time = str_to_td(line[9:].strip())
+    for date in opEvents:
+      if date.strftime("%A") == day:
+        opEvents[date].append((date + current_time, 'TEST EAS LIGHTS AND TURN ON TRANSMITTER'))
+  elif line       == "end":
+    pass
+  elif line[ : 9] == "alt_shows":
+    schedule[day].append(("alt_show", line[9:18].strip(), sched_raw[lidx][19:-1].split('","'), sched_raw[lidx+1][19:-1].split('","')))
+    current_time += str_to_td(line[9:18].strip())
+    lidx += 1
+  elif len(line.strip()) == 0:
+    pass # we don't need no empty lines
+  else:
+    print "?? '%s'" % line
+  lidx += 1
 
 # THIRD, compute other events that will occur on a particular day
 
 import twilight
 
 twilights = map(twilight.twilight, dates)
+for date in dates:
+  opEvents[date].append((twilight.twilight(date), "CHECK TOWER LIGHTS: READING ="))
 
 # FOURTH, produce the pdf
 
 import os
-from reportlab.platypus import BaseDocTemplate, Frame, NextPageTemplate, PageBreak, PageTemplate, Table, TableStyle
-from reportlab.platypus.para import Paragraph
-from reportlab.platypus import flowables
+from reportlab.platypus import BaseDocTemplate, Frame, NextPageTemplate, PageBreak, PageTemplate, Table, TableStyle, Paragraph, flowables
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.rl_config import defaultPageSize
+import tablegen
 
 #letter paper
 PAGE_WIDTH=8.5*inch
@@ -126,7 +139,10 @@ frameRules = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='
 #normal frame as for SimpleFlowDocument
 frameT = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
 
-Elements.append(Paragraph("".join(open("op_title.xml").readlines()), styles['Normal']))
+paraPrefix = "<para";
+for elt in "".join(open("op_title.xml").readlines()).split(paraPrefix):
+  if len(elt.strip()) > 0:
+    Elements.append(Paragraph(paraPrefix + elt, styles['Normal']))
 data = [
     ["Henry Holtzman", "Home: 617-327-1298", "Work: 617-253-0319"],
     ["Ted Young",      "Home: 617-776-7473", "Cell: 617-447-8439"] ]
@@ -159,17 +175,18 @@ def SigPage():
     ]))
   return t
 
-
 for date in dates:
   Elements.append(flowables.DocAssign("currentYear",  date.year))
   Elements.append(flowables.DocAssign("currentMonth", date.month))
   Elements.append(flowables.DocAssign("currentDay",   date.day))
-  Elements.append(NextPageTemplate('OTALogPage'))
-  Elements.append(PageBreak())
-  Elements.append(SigPage())
-  Elements.append(NextPageTemplate('OpLogPage'))
-  Elements.append(PageBreak())
-  Elements.append(Paragraph("Moustaches", styles['Normal']))
+  tables = tablegen.make_day_tables(opEvents[date])
+  for table in tables:
+    Elements.append(NextPageTemplate('OTALogPage'))
+    Elements.append(PageBreak())
+    Elements.append(SigPage())
+    Elements.append(NextPageTemplate('OpLogPage'))
+    Elements.append(PageBreak())
+    Elements.append(table)
 
 doc.addPageTemplates([PageTemplate(id='Title',frames=frameRules,onPage=title,pagesize=letter),
                       PageTemplate(id='OTALogPage',frames=frameT,onPage=foot,pagesize=letter),
