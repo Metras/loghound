@@ -123,7 +123,11 @@ def foot(canvas,doc):
     canvas.setFont('Times-Roman',20)
     canvas.drawString(0.3*inch, PAGE_HEIGHT-0.7*inch, "WMBR Operating Log")
     canvas.drawRightString(PAGE_WIDTH-0.5*inch, PAGE_HEIGHT-0.7*inch, today.strftime("%A, %b %d, %Y"))
-    canvas.drawRightString(PAGE_WIDTH-0.5*inch, 0.3*inch, "Page %d" % (doc.page))
+    # this draws the page number on the outside corner of the log
+    if doc.page % 2 == 0:
+      canvas.drawString(0.3*inch, 0.3*inch, "Page %d" % (doc.page))
+    else:
+      canvas.drawRightString(PAGE_WIDTH-0.5*inch, 0.3*inch, "Page %d" % (doc.page))
     canvas.restoreState()
 
 def title(canvas,doc):
