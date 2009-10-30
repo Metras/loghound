@@ -105,32 +105,32 @@ import os
 from reportlab.platypus import BaseDocTemplate, Frame, NextPageTemplate, PageBreak, PageTemplate, Table, TableStyle, Paragraph, flowables
 from reportlab.lib import colors
 from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.rl_config import defaultPageSize
 import tablegen
 
 #letter paper
-PAGE_WIDTH=8.5*inch
-PAGE_HEIGHT=11.5*inch
-letter=[PAGE_WIDTH,PAGE_HEIGHT]
+PAGE_WIDTH, PAGE_HEIGHT = letter
 styles=getSampleStyleSheet()
 Elements=[]
 
-doc = BaseDocTemplate("basedoc.pdf",showBoundary=0,allowSplitting=0,leftMargin=0.5*inch,rightMargin=0.5*inch)
+doc = BaseDocTemplate("basedoc.pdf",showBoundary=0,allowSplitting=0,leftMargin=0.5*inch,rightMargin=0.5*inch,topMargin=1.4*inch,bottomMargin=0*inch)
 
 def foot(canvas,doc):
     today = datetime.date(doc.docEval("currentYear"), doc.docEval("currentMonth"), doc.docEval("currentDay"))
     canvas.saveState()
-    canvas.setFont('Times-Roman',19)
+    canvas.setFont('Times-Roman',20)
     canvas.drawString(0.3*inch, PAGE_HEIGHT-0.7*inch, "WMBR Operating Log")
     canvas.drawRightString(PAGE_WIDTH-0.5*inch, PAGE_HEIGHT-0.7*inch, today.strftime("%A, %b %d, %Y"))
+    canvas.drawRightString(PAGE_WIDTH-0.5*inch, 0.3*inch, "Page %d" % (doc.page))
     canvas.restoreState()
 
 def title(canvas,doc):
     canvas.saveState()
     canvas.setFont('Times-Roman',20)
-    canvas.drawString(0.5*inch, PAGE_HEIGHT-0.5*inch, "WMBR Operating Log")
-    canvas.drawRightString(PAGE_WIDTH-0.75*inch, PAGE_HEIGHT-0.5*inch, "%02d/%02d/%d — %02d/%02d/%d" % (dates[0].month, dates[0].day, dates[0].year, dates[-1].month, dates[-1].day, dates[-1].year))
+    canvas.drawString(0.3*inch, PAGE_HEIGHT-0.7*inch, "WMBR Operating Log")
+    canvas.drawRightString(PAGE_WIDTH-0.5*inch, PAGE_HEIGHT-0.7*inch, "%02d/%02d/%d — %02d/%02d/%d" % (dates[0].month, dates[0].day, dates[0].year, dates[-1].month, dates[-1].day, dates[-1].year))
     canvas.restoreState()
 
 #normal frame as for SimpleFlowDocument
