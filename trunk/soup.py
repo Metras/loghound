@@ -9,13 +9,22 @@ import datetime
 calendar.setfirstweekday(calendar.SUNDAY)
 
 if len(sys.argv) < 4:
-  print "should be:\n\t%s <year> <month> <day>" % sys.argv[0]
+  print "should be:\n\t%s <year> <month> <day> [number of days]" % sys.argv[0]
   sys.exit(0)
 
 year  = int(sys.argv[1])
 month = int(sys.argv[2])
 day   = int(sys.argv[3])
 today = datetime.datetime(year,month,day)
+
+numdays = 7
+try:
+  numdays = int(sys.argv[4])
+except IndexError:
+  pass
+except ValueError:
+  pass
+
 #print "year  = %4d"      %   year
 #print "month = %4d = %s" % (month, calendar.month_name[month])
 #print "day   = %4d = %s" % (  day, calendar.day_name[calendar.weekday(year,month,day)])
@@ -23,7 +32,7 @@ today = datetime.datetime(year,month,day)
 if today.weekday() != calendar.SUNDAY:
   print "This is supposed to start on a Sunday.  I assume you know what you're doing."
 
-dates = [today + datetime.timedelta(i) for i in xrange(7)]
+dates = [today + datetime.timedelta(i) for i in xrange(numdays)]
 progEvents = dict([(date,[]) for date in dates])
 opEvents = dict([(date,[]) for date in dates])
 
@@ -33,10 +42,19 @@ opEvents = dict([(date,[]) for date in dates])
 #       output things this way, we should put out an XML file!
 
 import urllib
+import sys
+import codecs
 
-print "Downloading schedule..."
-sched_raw = urllib.urlopen('http://wmbr.org/cgi-bin/prog_log_input').read()
-print "Done."
+if False:
+  print "Downloading schedule...",
+  sys.stdout.flush()
+  sched_raw = unicode(urllib.urlopen('http://wmbr.org/cgi-bin/prog_log_input').read(), "iso-8859-1")
+  print "Done."
+else:
+  print "Using cached schedule (probably not what you want)...",
+  sys.stdout.flush()
+  sched_raw = "".join(codecs.open( "prog_log_input", "r", "iso-8859-1" ).readlines())
+  print "Done."
 
 # remove /* comments */
 while sched_raw.find("/*") > -1:
@@ -67,23 +85,33 @@ while lidx < len(sched_raw):
   elif line[3: 7] == "show":
     args = line[3:].split("   ")
     schedule[day].append(("show", args[1], args[2][2:-1].split('","')))
-    current_time += str_to_td(args[1])
+    duration = str_to_td(args[1])
+    current_time += duration
+    for date in progEvents:
+      if date.strftime("%A") == day:
+	progEvents[date].append((date+current_time, "show", duration, tuple(args[2][2:-1].split('","'))))
   elif line[3:10] == "signoff":
     schedule[day].append(("signoff",))
     for date in opEvents:
       if date.strftime("%A") == day:
         opEvents[date].append((date + current_time, 'TURN OFF TRANSMITTER'))
+	progEvents[date].append((date+current_time, 'Station Sign-Off'))
   elif line[3: 9] == "signon":
     schedule[day].append(("signon", line[9:].strip()))
     current_time = str_to_td(line[9:].strip())
     for date in opEvents:
       if date.strftime("%A") == day:
         opEvents[date].append((date + current_time, 'TEST EAS LIGHTS AND TURN ON TRANSMITTER'))
+	progEvents[date].append((date+current_time, 'Station Sign-On'))
   elif line       == "end":
     pass
   elif line[ : 9] == "alt_shows":
     schedule[day].append(("alt_show", line[9:18].strip(), sched_raw[lidx][19:-1].split('","'), sched_raw[lidx+1][19:-1].split('","')))
-    current_time += str_to_td(line[9:18].strip())
+    duration = str_to_td(line[9:18].strip())
+    current_time += duration
+    for date in progEvents:
+      if date.strftime("%A") == day:
+	progEvents[date].append((date+current_time, "altshow", duration, sched_raw[lidx][19:-1].split('","'), sched_raw[lidx+1][19:-1].split('","')))
     lidx += 1
   elif len(line.strip()) == 0:
     pass # we don't need no empty lines
@@ -109,19 +137,19 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.rl_config import defaultPageSize
 import tablegen
+import progtablegen
 
 #letter paper
 PAGE_WIDTH, PAGE_HEIGHT = letter
 styles=getSampleStyleSheet()
 Elements=[]
 
-doc = BaseDocTemplate("basedoc.pdf",showBoundary=0,allowSplitting=0,leftMargin=0.5*inch,rightMargin=0.5*inch,topMargin=1.4*inch,bottomMargin=0*inch)
-
-def foot(canvas,doc):
+def foot(title):
+  def _foot(canvas, doc):
     today = datetime.date(doc.docEval("currentYear"), doc.docEval("currentMonth"), doc.docEval("currentDay"))
     canvas.saveState()
     canvas.setFont('Times-Roman',20)
-    canvas.drawString(0.3*inch, PAGE_HEIGHT-0.7*inch, "WMBR Operating Log")
+    canvas.drawString(0.3*inch, PAGE_HEIGHT-0.7*inch, title)
     canvas.drawRightString(PAGE_WIDTH-0.5*inch, PAGE_HEIGHT-0.7*inch, today.strftime("%A, %b %d, %Y"))
     # this draws the page number on the outside corner of the log
     if doc.page % 2 == 0:
@@ -129,28 +157,28 @@ def foot(canvas,doc):
     else:
       canvas.drawRightString(PAGE_WIDTH-0.5*inch, 0.3*inch, "Page %d" % (doc.page))
     canvas.restoreState()
+  return _foot
 
-def title(canvas,doc):
+def title(title):
+  def _title(canvas,doc):
     canvas.saveState()
     canvas.setFont('Times-Roman',20)
-    canvas.drawString(0.3*inch, PAGE_HEIGHT-0.7*inch, "WMBR Operating Log")
+    canvas.drawString(0.3*inch, PAGE_HEIGHT-0.7*inch, title)
     canvas.drawRightString(PAGE_WIDTH-0.5*inch, PAGE_HEIGHT-0.7*inch, "%02d/%02d/%d — %02d/%02d/%d" % (dates[0].month, dates[0].day, dates[0].year, dates[-1].month, dates[-1].day, dates[-1].year))
     canvas.restoreState()
+  return _title
 
-#normal frame as for SimpleFlowDocument
-frameRules = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
-
-#normal frame as for SimpleFlowDocument
-frameT = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
-
-paraPrefix = "<para";
-for elt in "".join(open("op_title.xml").readlines()).split(paraPrefix):
-  if len(elt.strip()) > 0:
-    Elements.append(Paragraph(paraPrefix + elt, styles['Normal']))
-data = [
-    ["Henry Holtzman", "Home: 617-327-1298", "Work: 617-253-0319"],
-    ["Ted Young",      "Home: 617-776-7473", "Cell: 617-447-8439"] ]
-Elements.append(Table(data, style=[('SIZE',(0,0),(-1,-1),12)]))
+def rulesPage(fname = "op_title.xml"):
+  eltList = []
+  paraPrefix = "<para";
+  for elt in "".join(open(fname).readlines()).split(paraPrefix):
+    if len(elt.strip()) > 0:
+      eltList.append(Paragraph(paraPrefix + elt, styles['Normal']))
+  data = [
+      ["Henry Holtzman", "Home: 617-327-1298", "Work: 617-253-0319"],
+      ["Ted Young",      "Home: 617-776-7473", "Cell: 617-447-8439"] ]
+  eltList.append(Table(data, style=[('SIZE',(0,0),(-1,-1),12)]))
+  return eltList
 
 def SigPage():
   data = [ ["CUSTODIAN (print name)",
@@ -179,6 +207,14 @@ def SigPage():
     ]))
   return t
 
+## The operating log
+
+doc = BaseDocTemplate("oplog.pdf",showBoundary=0,allowSplitting=0,leftMargin=0.5*inch,rightMargin=0.5*inch,topMargin=1.4*inch,bottomMargin=0*inch)
+
+frameNormal = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
+
+Elements.extend(rulesPage())
+
 for date in dates:
   Elements.append(flowables.DocAssign("currentYear",  date.year))
   Elements.append(flowables.DocAssign("currentMonth", date.month))
@@ -192,9 +228,37 @@ for date in dates:
     Elements.append(PageBreak())
     Elements.append(table)
 
-doc.addPageTemplates([PageTemplate(id='Title',frames=frameRules,onPage=title,pagesize=letter),
-                      PageTemplate(id='OTALogPage',frames=frameT,onPage=foot,pagesize=letter),
-                      PageTemplate(id='OpLogPage',frames=frameT,onPage=foot,pagesize=letter)
+doc.addPageTemplates([PageTemplate(id='Title',frames=frameNormal,onPage=title("WMBR Operating Log"),pagesize=letter),
+                      PageTemplate(id='OTALogPage',frames=frameNormal,onPage=foot("WMBR Operating Log"),pagesize=letter),
+                      PageTemplate(id='OpLogPage',frames=frameNormal,onPage=foot("WMBR Operating Log"),pagesize=letter)
+                      ])
+
+#start the construction of the pdf
+doc.build(Elements)
+
+## The programming log
+
+doc = BaseDocTemplate("proglog.pdf",showBoundary=0,allowSplitting=0,leftMargin=0.5*inch,rightMargin=0.5*inch,topMargin=1.4*inch,bottomMargin=0*inch)
+
+frameNormal = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
+
+Elements.extend(rulesPage())
+
+for date in dates:
+  Elements.append(flowables.DocAssign("currentYear",  date.year))
+  Elements.append(flowables.DocAssign("currentMonth", date.month))
+  Elements.append(flowables.DocAssign("currentDay",   date.day))
+  tables = progtablegen.make_prog_table(progEvents[date])
+  Elements.append(NextPageTemplate('OTALogPage'))
+  Elements.append(PageBreak())
+  Elements.append(SigPage())
+  Elements.append(NextPageTemplate('ProgLogPage'))
+  Elements.append(PageBreak())
+  Elements.extend(tables)
+
+doc.addPageTemplates([PageTemplate(id='Title',frames=frameNormal,onPage=title("WMBR Programming Log"),pagesize=letter),
+                      PageTemplate(id='OTALogPage',frames=frameNormal,onPage=foot("WMBR Programming Log"),pagesize=letter),
+                      PageTemplate(id='ProgLogPage',frames=frameNormal,onPage=foot("WMBR Programming Log"),pagesize=letter)
                       ])
 
 #start the construction of the pdf
