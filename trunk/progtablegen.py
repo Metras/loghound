@@ -45,3 +45,65 @@ def make_prog_table(events):
     else:
       pass
   return rvalue
+
+#########
+
+class show:
+    def __init__(self, start, duration, engineer, producer, announcer):
+        self.start = start
+        self.duration = duration
+        self.engineer = engineer
+        self.producer = producer
+        self.announcer = announcer
+        
+class signon:
+    def __init__(self, time):        
+        self.time = time
+        
+class signoff:
+    def __init__(self, time):
+        self.time = time
+
+def make_day_tables(showsAndEvents):
+    '''
+    showsAndEvents: a list of show, signon and signoff objects
+    returns a list of tables, one table per page. 
+    '''
+    cwidths = [1*inch]+[3*inch, 3*inch]
+    rheights= [40]*22
+    
+    data = [
+        ['00:00-02:00', 'Algorhythms', ''],
+        ['Engineer:', 'Wally Shmally', ''],
+        ['Producer:', 'Adam Bockelie, Ka Man Chan, Tracey Hayse, Elizabeth Jones', ''],
+        ['Announcer:', 'Adam Bockelie, Ka Man Chan, Tracey Hayse, Elizabeth Jones', ''],
+        ['anytime', 'PSA:', 'Certified:'],
+        ['01:00', 'Station ID', 'Certified:'],
+        ['anytime', 'Promo:', 'Certified:'],
+        ['02:00', 'Station ID:', 'Certified:'],
+        
+        ['02:00-03:00', 'Music For Human Beings', ''],
+        ['Engineer:', 'Bob Jobs', ''],
+        ['Producer:', 'Linda Pinkow, Chuck Rosina', ''],
+        ['Announcer:', 'Mistress Laura', ''],
+        ['anytime', 'PSA:', 'Certified:'],
+        ['03:00', 'Station ID', 'Certified:'],
+        
+        ['03:00-05:00', 'The Choice is Yourz', ''],
+        ['Engineer:', 'Rik', ''],
+        ['Producer:', 'Rik', ''],
+        ['Announcer:', 'Rik', ''],        
+        ['anytime', 'Promo:', 'Certified:'],
+        ['04:00', 'Station ID', 'Certified:'],
+        ['anytime', 'PSA:', 'Certified:'],
+        ['05:00', 'Station ID', 'Certified:'],                
+    ]
+    
+    story=[]
+    story.append(Table(data, cwidths, rheights))
+    doc = SimpleDocTemplate("prog_table_test.pdf")     
+    doc.build(story)
+
+make_day_tables([])
+
+    
