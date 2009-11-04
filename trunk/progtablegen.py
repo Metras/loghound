@@ -3,12 +3,24 @@ progtablegen generates WMBR's programming tables. It consists of one function:
 make_day_tables
 """
 
-import reportlab
+# import reportlab
+# from reportlab.lib import colors
+# from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+# from reportlab.platypus import BaseDocTemplate, Frame, NextPageTemplate, PageBreak, PageTemplate, Table, TableStyle, Paragraph, flowables
+# from reportlab.lib.units import inch 
+# from datetime import datetime
+
+import os
+from reportlab.pdfgen import canvas
+from reportlab.platypus import BaseDocTemplate, SimpleDocTemplate, Frame, NextPageTemplate, PageBreak, PageTemplate, Table, TableStyle, Paragraph, Spacer, flowables
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-from reportlab.platypus import PageBreak
-from reportlab.lib.units import inch 
-from datetime import datetime
+from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.rl_config import defaultPageSize
+import tablegen
+import progtablegen
+from pprint import pprint
 
 ########### table parameters 
 NOTES = 'NOTES' 
@@ -49,9 +61,10 @@ def make_prog_table(events):
 #########
 
 class show:
-    def __init__(self, start, duration, engineer, producer, announcer):
+    def __init__(self, name, start, end, engineer, producer, announcer):
+        self.name = name
         self.start = start
-        self.duration = duration
+        self.end = end
         self.engineer = engineer
         self.producer = producer
         self.announcer = announcer
@@ -64,7 +77,11 @@ class signoff:
     def __init__(self, time):
         self.time = time
 
+styles=getSampleStyleSheet() 
+
 def make_day_tables(showsAndEvents):
+    print 'calling make_day_tables'
+    
     '''
     showsAndEvents: a list of show, signon and signoff objects
     returns a list of tables, one table per page. 
@@ -72,38 +89,157 @@ def make_day_tables(showsAndEvents):
     cwidths = [1*inch]+[3*inch, 3*inch]
     rheights= [40]*22
     
+    
+    # nested table: has show name + producer/announcer/engineer 
+    # order: 
+    #   show name,  engineer
+    #   producer
+    #   announcer
+       
+      
+
+    return make_header_table(show2)
+    
+
+
+
+
+
+
+def make_header_table(show):
+    print 'calling make_header_table'
+
+    # note: tried using canvas.stringWidth(), 
+    # and two paragraph internal methods: paragraph.minWidth(), 
+    # and [sic] paragraph.getActualLineWidths0()
+    #
+    # none of these gave good numbers on how wide 
+    # a paragraph is. i'm therefore going to refrain from
+    # trying to manually set the column widths.
+    #
+    # instead it'll work like this: 
+    # 1. give a huge column width for the show title, 
+    # because show titles will often be long. 
+    #
+    # 2. give a small width for the engineer field, 
+    # that will accomodate a single longish name. 
+    # if the name is too many characters, default
+    # to a blank engineer field. long engineer names
+    # are a small corner case, no reason to make a big
+    # deal out of it. 
+    
+
+    if len(show.name) >= 55:
+        # issue warning
+        print 'warning: this show name might be too long: '+show.name
+              
+    def cutIfLong(s, chars):
+        # if something is too big to fit in the table,
+        # return an empty string instead. 
+        #
+        # note: it'd be better to use the actual rendering
+        # size than the character length. see note above:
+        # i couldn't get it working for paragraphs. 
+        if len(s) > chars:
+            print "cutting this string because it's too long: "+s
+            return ''
+        else:
+            return s
+        
+    def para(label, value, align='left'):
+        if not value.strip():
+            value = ''       
+            extra_attrs = 'rindent="100"' 
+        else:
+            extra_attrs = ''
+        text = '<para align=%s %s><b>%s:</b> %s</para>' % (align, extra_attrs, label, value)        
+        return Paragraph(text, styles['Normal'])                 
+    
+    def show_para(show):
+        return Paragraph('<para size="11"><b><i>%s</i></b></para>' % show, styles['Normal'])
+        
     data = [
-        ['00:00-02:00', 'Algorhythms', ''],
-        ['Engineer:', 'Wally Shmally', ''],
-        ['Producer:', 'Adam Bockelie, Ka Man Chan, Tracey Hayse, Elizabeth Jones', ''],
-        ['Announcer:', 'Adam Bockelie, Ka Man Chan, Tracey Hayse, Elizabeth Jones', ''],
-        ['anytime', 'PSA:', 'Certified:'],
-        ['01:00', 'Station ID', 'Certified:'],
-        ['anytime', 'Promo:', 'Certified:'],
-        ['02:00', 'Station ID:', 'Certified:'],
-        
-        ['02:00-03:00', 'Music For Human Beings', ''],
-        ['Engineer:', 'Bob Jobs', ''],
-        ['Producer:', 'Linda Pinkow, Chuck Rosina', ''],
-        ['Announcer:', 'Mistress Laura', ''],
-        ['anytime', 'PSA:', 'Certified:'],
-        ['03:00', 'Station ID', 'Certified:'],
-        
-        ['03:00-05:00', 'The Choice is Yourz', ''],
-        ['Engineer:', 'Rik', ''],
-        ['Producer:', 'Rik', ''],
-        ['Announcer:', 'Rik', ''],        
-        ['anytime', 'Promo:', 'Certified:'],
-        ['04:00', 'Station ID', 'Certified:'],
-        ['anytime', 'PSA:', 'Certified:'],
-        ['05:00', 'Station ID', 'Certified:'],                
+        [show_para(show.name), para('Engineer', cutIfLong(show.engineer, 20), align='right')],            
+        [para('Producers', cutIfLong(show.producer, 60)), ''],
+        [para('Announcers', cutIfLong(show.announcer, 60)), '']
     ]
     
-    story=[]
-    story.append(Table(data, cwidths, rheights))
-    doc = SimpleDocTemplate("prog_table_test.pdf")     
-    doc.build(story)
-
-make_day_tables([])
-
+    tstyles = [
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),            
+        ('GRID', (0,0), (-1,-1), .6, colors.black),            
+        ('SPAN', (0,1), (1,1)), 
+        ('SPAN', (0,2), (1,2)),             
+    ]
     
+    cwidths = [4*inch, None]
+    #rheights = [None, .2*inch, .2*inch]
+    rheights = [None, None, None]
+    return Table(data, cwidths, rheights, tstyles)
+
+
+
+
+
+
+###### test shows
+
+# baseline
+show1 = show('Music for Human Beings', 
+            '17:00', '19:00', 
+            'Dr. Jalis As-Sakran', 
+            'Lester Woods', 
+            'Peace Child Peter')
+
+# no engineer, announcer or producer
+show2 = show("Generoso's Bovine Ska and Polka and Rocksteady", 
+            '19:00', '20:00', 
+            '', 
+            '', 
+            '')
+
+# long engineer name
+show3 = show('Jazz Train', 
+            '20:00', '21:00', 
+            'Dr. Jalis "Doctor" As-Sakran Jr.', 
+            'Lester Woods', 
+            'Peace Child Peter')
+
+# long producer and announcer name
+show4 = show("Terrashow", 
+            '21:00', '22:00', 
+            'Peace Child Peter',
+            'Adam Bockelie, Ka Man Chan, Tracey Hayse, Elizabeth Jones, Yusung Lim, Emily Moberg', 
+            'Tracey Hayse, Adam Bockelie, Elizabeth Jones, Ka Man Chan, Yusung Lim, Emily Moberg')
+    
+# long show name
+show5 = show("Generoso's Bovine Ska and Polka and Rocksteady Show", 
+            '22:00', '23:00', 
+            'Gene', 
+            'Gene', 
+            'Gene')
+
+# long show, engineer, producer and announcer name
+show6 = show("Generoso's Bovine Ska and Polka and Rocksteady Show II", 
+            '23:00', '00:00', 
+            'Generoso "Sweet Victory" Fierro', 
+            'Adam Bockelie, Ka Man Chan, Tracey Hayse, Elizabeth Jones, Yusung Lim, Emily Moberg', 
+            'Adam Bockelie, Ka Man Chan, Tracey Hayse, Elizabeth Jones, Yusung Lim, Emily Moberg')
+    
+
+shows = [show1, show2, show3, show4, show5, show6]
+
+
+
+
+
+story=[]
+story.append(make_day_tables([]))
+doc = SimpleDocTemplate("prog_table_test.pdf")     
+doc.build(story)
+   
+#make_day_tables([])
+
+
