@@ -1,7 +1,12 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 """
 progtablegen generates WMBR's programming tables. It consists of one function:
 make_day_tables
 """
+
+import datetime
 
 # import reportlab
 # from reportlab.lib import colors
@@ -68,13 +73,13 @@ def make_show_table(show, use_grey_background=False):
     'makes a table for a single radio show'
     cwidths = [.5*inch, .75*inch, 1.25*inch, 3.0*inch, 1.25*inch]
     
-    start = "%02d:00" % show.start
-    end = "%02d:00" % ((show.start + show.duration) % 24)
+    start = show.start.strftime("%H:%M")
+    end = (show.start+show.duration).strftime("%H:%M")
         
-    hour_range = '%s\nto\n%s' % (start, end)
+    hour_range = "%s\n–\n%s" % (start, end)
     header = make_header_table(show)
     
-    data = [        
+    data = [
         [hour_range, header, '', '', ''],        
     ]    
     
@@ -93,19 +98,22 @@ def make_show_table(show, use_grey_background=False):
     ]
     
     is_white = False 
-    for hour in range(show.start+1, show.start+show.duration+1):
+    for hour in range(show.start.hour, (show.start+show.duration+datetime.timedelta(0,59*60)).hour):
         hour %= 24 # in case it starts at 23:00 and goes until 01:00 for example
         
         row = len(data)
-        psa_or_promo = hour % 2 and 'PSA:' or 'Promo:'
-        data.append(
-            ["%02d:00" % hour, 'Station ID', 'Certified:', psa_or_promo, 'Certified:']
-        )
-        tstyles.extend([
-            ('ALIGN', (2,row), (4,row), 'LEFT'),
-            ('BOX', (1,row), (2,row), .5, colors.black),
-            ('BOX', (3,row), (4,row), .5, colors.black),        
-        ])
+        if hour == (show.start+show.duration).hour and (show.start+show.duration).minute != 0:
+          pass
+        else:
+          psa_or_promo = hour % 2 and 'PSA:' or 'Promo:'
+          data.append(
+              ["%02d:00" % (hour+1), 'Station ID', '✘'+'_'*15, psa_or_promo, '➤'+'_'*14]
+          )
+          tstyles.extend([
+              ('ALIGN', (2,row), (4,row), 'LEFT'),
+              ('BOX', (1,row), (2,row), .5, colors.black),
+              ('BOX', (3,row), (4,row), .5, colors.black),
+          ])
         
     if use_grey_background:            
         tstyles.append(('BACKGROUND', (0, 0), (0, -1), colors.lightgrey))
@@ -140,7 +148,7 @@ story=[]
 tables = make_day_tables(model.day)
 for (i, table) in enumerate(tables):
     story.append(table)
-doc = SimpleDocTemplate("prog_table_test.pdf")     
+doc = SimpleDocTemplate("prog_table_test.pdf")
 doc.build(story)
 
 #make_day_tables([])

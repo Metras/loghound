@@ -123,7 +123,7 @@ def make_header_table(show):
             extra_attrs = 'rindent="%s"' % BLANK_ENGINEER_RINDENT
         else:
             extra_attrs = ''
-        text = '<para align=%s %s><b>%s:</b> %s</para>' % (align, extra_attrs, label, value)        
+        text = '<para align=%s %s><i>%s:</i> %s</para>' % (align, extra_attrs, label, value)
         return Paragraph(text, STYLES['Normal'])                 
     
     def make_title(name):
@@ -143,7 +143,7 @@ def make_header_table(show):
     title = make_title(show.name)
     
     engineer = make_field('Engineer', 
-        truncate_if_needed(show.engineer, MAX_ENGINEER_CHARS), align='right')
+        truncate_if_needed(show.engineer, MAX_ENGINEER_CHARS))
     
     producer = make_field(producer_label, 
         truncate_if_needed(show.producer, MAX_PRODUCER_CHARS))
