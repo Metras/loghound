@@ -68,7 +68,7 @@ TITLE_BOTTOM_PADDING = 2
 
 # how much to right-indent the engineer field when the engineer is blank. 
 # (an rindent makes space for the engineer to write their name manually instead.)  
-BLANK_ENGINEER_RINDENT = 100
+BLANK_ENGINEER_RINDENT = 70
 
 #### max character widths: if any of the corresponding fields go beyond
 #### these widths, they'll be truncated to blanks and the engineer will
@@ -86,8 +86,9 @@ MAX_ENGINEER_CHARS = 20
 # the show title is different: can't truncate it. instead, if it surpasses 
 # this char length, i shrink the font.  
 MAX_SHOW_CHARS = 50
+FONT_SUBTRACTION = 2
 
-
+# TODO: base or sample styles? or should we make our own?
 STYLES=getSampleStyleSheet()
 
 def make_header_table(show):
@@ -126,7 +127,10 @@ def make_header_table(show):
         return Paragraph(text, STYLES['Normal'])                 
     
     def make_title(name):
-        fontsize = len(name) < MAX_SHOW_CHARS and TITLE_FONTSIZE or (TITLE_FONTSIZE-3)
+        if len(name) < MAX_SHOW_CHARS:            
+            fontsize = TITLE_FONTSIZE 
+        else:
+            fontsize = TITLE_FONTSIZE-FONT_SUBTRACTION
         
         return Paragraph(
             '<para size="%d"><b><i>%s</i></b></para>' % (fontsize, name),
@@ -164,7 +168,7 @@ def make_header_table(show):
         ('SPAN', (0,1), (1,1)), 
         ('SPAN', (0,2), (1,2)),                     
         # comment-in the grid to get a better picture of the table structure
-        ('GRID', (0,0), (-1,-1), .6, colors.black),                    
+        #('GRID', (0,0), (-1,-1), .6, colors.black),                    
     ]
     
     cwidths = [TITLE_COL_WIDTH, ENGINEER_COL_WIDTH]
@@ -179,5 +183,6 @@ def main():
     doc.build(story)
 
 if __name__ == '__main__':
-    main()
+    pass
+    #main()
 
