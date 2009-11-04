@@ -126,6 +126,7 @@ def make_day_tables(showsAndEvents):
     for i, obj in enumerate(showsAndEvents):
         if isinstance(obj, model.show):            
             tables.append(make_show_table(obj, i%2))
+            tables.append(Spacer(0,10))
         if isinstance(obj, model.signon):
             print 'signon'
         if isinstance(obj, model.signoff):
@@ -138,8 +139,6 @@ story=[]
 tables = make_day_tables(model.day)
 for (i, table) in enumerate(tables):
     story.append(table)
-    if i > 0 and i%5 == 0:
-        story.append(PageBreak())
 doc = SimpleDocTemplate("prog_table_test.pdf")     
 doc.build(story)
 
