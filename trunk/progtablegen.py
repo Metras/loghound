@@ -19,7 +19,6 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.rl_config import defaultPageSize
 import tablegen
-import progtablegen
 from pprint import pprint
 
 ########### table parameters 
@@ -79,9 +78,7 @@ class signoff:
 
 styles=getSampleStyleSheet() 
 
-def make_day_tables(showsAndEvents):
-    print 'calling make_day_tables'
-    
+def make_day_tables(showsAndEvents):    
     '''
     showsAndEvents: a list of show, signon and signoff objects
     returns a list of tables, one table per page. 
@@ -90,25 +87,46 @@ def make_day_tables(showsAndEvents):
     rheights= [40]*22
     
     
-    # nested table: has show name + producer/announcer/engineer 
-    # order: 
-    #   show name,  engineer
-    #   producer
-    #   announcer
-       
-      
 
     return make_header_table(show2)
     
 
 
 
-
-
+def make_show_table(show, ):
+    data = [
+        ['00:00\nto\n01:00', make_header_table(show), '', '', ''],        
+        ['01:00', 'Station Id', 'Certified:', 'Promo:', 'Certified:']
+    ]
+    
+    cwidths = [.5*inch, .75*inch, 1.25*inch, 3.0*inch, 1.25*inch]
+    
+    rheights = [
+        None
+    ] * 2
+    
+    tstyles = [
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (1,0), (2,0), 5),        
+        #('BOTTOMPADDING', (1,0), (2,0), 5),        
+        ('SPAN', (1,0), (4,0)),
+        ('ALIGN', (2,1), (4,1), 'LEFT'),
+        ('GRID', (0,0), (0,-1), .5, colors.black),
+        ('BOX', (1,1), (2,1), .5, colors.black),
+        ('BOX', (3,1), (4,1), .5, colors.black),        
+        ('BOX', (1,0), (-1,0), .5, colors.black),
+    ]
+    
+    return Table(data, cwidths, rheights, tstyles)
 
 def make_header_table(show):
-    print 'calling make_header_table'
-
+    # nested table: has show name + producer/announcer/engineer 
+    # order: 
+    #   show name,  engineer
+    #   producer
+    #   announcer
+        
     # note: tried using canvas.stringWidth(), 
     # and two paragraph internal methods: paragraph.minWidth(), 
     # and [sic] paragraph.getActualLineWidths0()
@@ -156,12 +174,16 @@ def make_header_table(show):
         return Paragraph(text, styles['Normal'])                 
     
     def show_para(show):
-        return Paragraph('<para size="11"><b><i>%s</i></b></para>' % show, styles['Normal'])
+        return Paragraph('<para size="12"><b><i>%s</i></b></para>' % show, styles['Normal'])
+        
+    # get plurals right
+    producer_label = ',' in show.producer and 'Producers' or 'Producer'
+    announcer_label = ',' in show.announcer and 'Announcers' or 'Announcer'
         
     data = [
         [show_para(show.name), para('Engineer', cutIfLong(show.engineer, 20), align='right')],            
-        [para('Producers', cutIfLong(show.producer, 60)), ''],
-        [para('Announcers', cutIfLong(show.announcer, 60)), '']
+        [para(producer_label, cutIfLong(show.producer, 60)), ''],
+        [para(announcer_label, cutIfLong(show.announcer, 60)), '']
     ]
     
     tstyles = [
@@ -169,7 +191,11 @@ def make_header_table(show):
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),            
-        ('GRID', (0,0), (-1,-1), .6, colors.black),            
+        ('BOTTOMPADDING', (0,0), (-1,0), 2),                    
+        ('TOPPADDING', (0,0), (-1,0), 3.5),                    
+        
+        #('GRID', (0,0), (-1,-1), .6, colors.black),            
+        ('BORDER', (0,0), (-1,-1), .6, colors.black),                    
         ('SPAN', (0,1), (1,1)), 
         ('SPAN', (0,2), (1,2)),             
     ]
@@ -204,8 +230,8 @@ show2 = show("Generoso's Bovine Ska and Polka and Rocksteady",
 show3 = show('Jazz Train', 
             '20:00', '21:00', 
             'Dr. Jalis "Doctor" As-Sakran Jr.', 
-            'Lester Woods', 
-            'Peace Child Peter')
+            'Lester Woods, Pat Greenleaf',
+            'Peace Child Peter, Prof Levine')
 
 # long producer and announcer name
 show4 = show("Terrashow", 
@@ -235,11 +261,11 @@ shows = [show1, show2, show3, show4, show5, show6]
 
 
 
+
+
 story=[]
-story.append(make_day_tables([]))
+story.append(make_show_table(show5))
 doc = SimpleDocTemplate("prog_table_test.pdf")     
 doc.build(story)
-   
+
 #make_day_tables([])
-
-
