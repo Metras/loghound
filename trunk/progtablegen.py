@@ -6,7 +6,7 @@ progtablegen generates WMBR's programming tables. It consists of one function:
 make_day_tables
 """
 
-import datetime
+import datetime, model
 
 # import reportlab
 # from reportlab.lib import colors
@@ -71,7 +71,7 @@ styles=getSampleStyleSheet()
 from progheader import make_header_table
 def make_show_table(show, use_grey_background=False):
     'makes a table for a single radio show'
-    cwidths = [.5*inch, .75*inch, 1.25*inch, 3.0*inch, 1.25*inch]
+    cwidths = [.5*inch, .75*inch, 1.25*inch, 3.8*inch, 1.25*inch]
     
     start = show.start.strftime("%H:%M")
     end = (show.start+show.duration).strftime("%H:%M")
@@ -143,12 +143,12 @@ def make_day_tables(showsAndEvents):
     
     return tables
 
-import model
-story=[]
-tables = make_day_tables(model.day)
-for (i, table) in enumerate(tables):
-    story.append(table)
-doc = SimpleDocTemplate("prog_table_test.pdf")
-doc.build(story)
+if __name__ == "__main__":
+  story=[]
+  tables = make_day_tables(model.day)
+  for (i, table) in enumerate(tables):
+      story.append(table)
+  doc = SimpleDocTemplate("prog_table_test.pdf")
+  doc.build(story)
 
 #make_day_tables([])

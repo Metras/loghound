@@ -44,6 +44,7 @@ opEvents = dict([(date,[]) for date in dates])
 import urllib
 import sys
 import codecs
+import model
 
 if False:
   print "Downloading schedule...",
@@ -86,32 +87,44 @@ while lidx < len(sched_raw):
     args = line[3:].split("   ")
     schedule[day].append(("show", args[1], args[2][2:-1].split('","')))
     duration = str_to_td(args[1])
-    current_time += duration
+    data = tuple(args[2][2:-1].split('","'))
+    name = data[0]
+    producer = data[1]
+    announcer = data[2]
+    engineer = data[3]
     for date in progEvents:
       if date.strftime("%A") == day:
-	progEvents[date].append((date+current_time, "show", duration, tuple(args[2][2:-1].split('","'))))
+	progEvents[date].append(model.show(
+          name,
+	  date+current_time,
+          duration,
+          engineer,
+          producer,
+          announcer))
+    current_time += duration
   elif line[3:10] == "signoff":
     schedule[day].append(("signoff",))
     for date in opEvents:
       if date.strftime("%A") == day:
         opEvents[date].append((date + current_time, 'TURN OFF TRANSMITTER'))
-	progEvents[date].append((date+current_time, 'Station Sign-Off'))
+	progEvents[date].append(model.signoff(date+current_time))
   elif line[3: 9] == "signon":
     schedule[day].append(("signon", line[9:].strip()))
     current_time = str_to_td(line[9:].strip())
     for date in opEvents:
       if date.strftime("%A") == day:
         opEvents[date].append((date + current_time, 'TEST EAS LIGHTS AND TURN ON TRANSMITTER'))
-	progEvents[date].append((date+current_time, 'Station Sign-On'))
+	progEvents[date].append(model.signon(date+current_time))
   elif line       == "end":
     pass
   elif line[ : 9] == "alt_shows":
     schedule[day].append(("alt_show", line[9:18].strip(), sched_raw[lidx][19:-1].split('","'), sched_raw[lidx+1][19:-1].split('","')))
     duration = str_to_td(line[9:18].strip())
-    current_time += duration
     for date in progEvents:
       if date.strftime("%A") == day:
-	progEvents[date].append((date+current_time, "altshow", duration, sched_raw[lidx][19:-1].split('","'), sched_raw[lidx+1][19:-1].split('","')))
+#	progEvents[date].append((date+current_time, "altshow", duration, sched_raw[lidx][19:-1].split('","'), sched_raw[lidx+1][19:-1].split('","')))
+        pass
+    current_time += duration
     lidx += 1
   elif len(line.strip()) == 0:
     pass # we don't need no empty lines
@@ -209,7 +222,7 @@ def SigPage():
 
 ## The operating log
 
-doc = BaseDocTemplate("oplog.pdf",showBoundary=0,allowSplitting=0,leftMargin=0.5*inch,rightMargin=0.5*inch,topMargin=1.4*inch,bottomMargin=0*inch)
+doc = BaseDocTemplate("oplog.pdf",showBoundary=0,allowSplitting=0,leftMargin=0.5*inch,rightMargin=0.5*inch,topMargin=1.4*inch,bottomMargin=0.5*inch)
 
 frameNormal = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
 
@@ -238,7 +251,7 @@ doc.build(Elements)
 
 ## The programming log
 
-doc = BaseDocTemplate("proglog.pdf",showBoundary=0,allowSplitting=0,leftMargin=0.5*inch,rightMargin=0.5*inch,topMargin=1.4*inch,bottomMargin=0*inch)
+doc = BaseDocTemplate("proglog.pdf",showBoundary=0,allowSplitting=0,leftMargin=0.5*inch,rightMargin=0.5*inch,topMargin=1.4*inch,bottomMargin=0.5*inch)
 
 frameNormal = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
 
@@ -248,7 +261,7 @@ for date in dates:
   Elements.append(flowables.DocAssign("currentYear",  date.year))
   Elements.append(flowables.DocAssign("currentMonth", date.month))
   Elements.append(flowables.DocAssign("currentDay",   date.day))
-  tables = progtablegen.make_prog_table(progEvents[date])
+  tables = progtablegen.make_day_tables(progEvents[date])
   Elements.append(NextPageTemplate('OTALogPage'))
   Elements.append(PageBreak())
   Elements.append(SigPage())

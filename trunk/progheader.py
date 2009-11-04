@@ -55,8 +55,8 @@ from reportlab.rl_config import defaultPageSize
 ########### CONSTANTS
 
 # widths for the show title column to the left and engineer column to the right
-TITLE_COL_WIDTH = 4*inch 
-ENGINEER_COL_WIDTH = 2*inch
+TITLE_COL_WIDTH = 4.4*inch 
+ENGINEER_COL_WIDTH = 2.4*inch
 
 # a larger fontsize is used for titles. 
 # this makes line alignment a little tricky. these three parameters are
