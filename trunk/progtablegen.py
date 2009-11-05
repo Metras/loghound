@@ -76,16 +76,25 @@ def make_show_table(show, use_grey_background=False):
         ('BOX', (1,0), (-1,0), .5, colors.black),                
     ]
     
-    for hour in range(show.start.hour, (show.start+show.duration+datetime.timedelta(0,59*60)).hour):
+
+    # was: 
+    # for hour in range(show.start.hour, (show.start+show.duration+datetime.timedelta(0,59*60)).hour):
+    start_hour = show.start.hour
+    end_hour = (show.start + show.duration).hour
+    if (end_hour < 12) and (start_hour > 12):
+         end_hour += 24
+    for hour in range(start_hour+1, end_hour+1):
         hour %= 24 # in case it starts at 23:00 and goes until 01:00 for example
         
         row = len(data)
-        if hour == (show.start+show.duration).hour and (show.start+show.duration).minute != 0:
-          pass
+        # if hour == (show.start+show.duration).hour and (show.start+show.duration).minute != 0:
+        #   pass
+        if False:
+            pass
         else:
           psa_or_promo = hour % 2 and 'PSA:' or 'Promo:'
           data.append(
-              ["%02d:00" % (hour+1), 'Station ID', '➤'+'_'*15, psa_or_promo, '➤'+'_'*14]
+              ["%02d:00" % (hour), 'Station ID', '➤'+'_'*15, psa_or_promo, '➤'+'_'*14]
           )
           tstyles.extend([
               ('ALIGN', (2,row), (4,row), 'LEFT'),
