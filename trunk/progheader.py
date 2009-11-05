@@ -133,7 +133,7 @@ def make_header_table(show):
             fontsize = TITLE_FONTSIZE-FONT_SUBTRACTION
         
         return Paragraph(
-            '<para size="%d"><b><i>%s</i></b></para>' % (fontsize, name),
+            '<para size="%d"><b>%s</b></para>' % (fontsize, name),
             STYLES['Normal'])
         
     # get plurals right
