@@ -59,7 +59,7 @@ def make_show_table(show, use_grey_background=False):
     header = make_header_table(show)
     
     data = [
-        [hour_range, header, '', '', ''],        
+        [hour_range, header, '', '', ''], 
     ]    
     
     tstyles = [
@@ -85,7 +85,7 @@ def make_show_table(show, use_grey_background=False):
         else:
           psa_or_promo = hour % 2 and 'PSA:' or 'Promo:'
           data.append(
-              ["%02d:00" % (hour+1), 'Station ID', '✘'+'_'*15, psa_or_promo, '➤'+'_'*14]
+              ["%02d:00" % (hour+1), 'Station ID', '➤'+'_'*15, psa_or_promo, '➤'+'_'*14]
           )
           tstyles.extend([
               ('ALIGN', (2,row), (4,row), 'LEFT'),

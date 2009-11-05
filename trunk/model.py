@@ -14,7 +14,7 @@ class show:
         engineer - string
         producer/announcer - string. use commas to separate multiple people.
         '''
-        self.name = name
+        self.name = "&amp;".join(name.split("&"))
         self.start = start 
         self.duration = duration
         self.engineer = engineer
