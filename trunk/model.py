@@ -14,7 +14,7 @@ class show:
         engineer - string
         producer/announcer - string. use commas to separate multiple people.
         '''
-        self.name = "&amp;".join(name.split("&"))
+        self.name = name
         self.start = start 
         self.duration = duration
         self.engineer = engineer
@@ -23,6 +23,8 @@ class show:
         # note: using a datetime for self.start doesn't make sense to
         # me, because self.start represents a periodic starting time,
         # not a datetime point. 
+    def getXmlSafeName(self):
+      return "&amp;".join(self.name.split("&"))
         
 class signon:
     '''

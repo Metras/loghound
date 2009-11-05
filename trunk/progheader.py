@@ -140,7 +140,7 @@ def make_header_table(show):
     producer_label = ',' in show.producer and 'Producers' or 'Producer'
     announcer_label = ',' in show.announcer and 'Announcers' or 'Announcer'
     
-    title = make_title(show.name)
+    title = make_title(show.getXmlSafeName())
     
     engineer = make_field('Engineer', 
         truncate_if_needed(show.engineer, MAX_ENGINEER_CHARS))
