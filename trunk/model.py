@@ -31,18 +31,15 @@ class signon:
     '''
     def __init__(self, time):        
         '''
-        time -- an integer between 0 and 23. this is
-        the hour the signon is scheduled to start.
+        time -- anything with an hour and minute attr,
+        where hour is an int between 0 and 23, and minute
+        is between 0 and 59 
         '''
         self.time = time
         
 class signoff:
     'represents a normal transmission signoff event.'
     def __init__(self, time):
-        '''
-        time -- an integer between 0 and 23. this is
-        the hour the signoff is scheduled to start.
-        '''
         self.time = time
 
 ###### sample shows
@@ -104,10 +101,11 @@ show8 = show("Detective Banana: I Bruise Easily",
             'Heavenly Creams')
  
  
-signoff1 = signoff(6)
-signon1 = signon(7)
-signoff2 = signoff(3)
-signon2 = signon(5)
+from datetime import time
+signoff1 = signoff(time(6, 0))
+signon1 = signon(time(7, 0))
+signoff2 = signoff(time(3, 0))
+signon2 = signon(time(4,0))
 
 # a list of day events. sprinkle in signon and signoff events
 day = [signoff1, signon1, show1, show2, show3, show4, show5, signoff2, signon2, show6, show7, show8]

@@ -27,28 +27,8 @@ import tablegen
 from pprint import pprint
 
 ########### table parameters 
-NOTES = 'NOTES' 
-HEADER_ROW = [
-    "Time On",
-    "Time Off",
-    "Program Material:"
-]
-NUM_COLS = len(HEADER_ROW)
 
-# reportlab uses 'None' in this context to mean: autofit
-HEADER_ROW_HEIGHT = None
-COL_WIDTHS = [None]*NUM_COLS
-
-# note: reportlab uses column-row cell coordinates, aka excel "A1" style. 
-TABLE_BASE_STYLE = [
-    ('VALIGN', (0,0), (-1,0), 'TOP'),
-    ('ALIGN', (0,0), (-1,0), 'CENTER'),
-    ('GRID', (0,0), (-1,-1), .6, colors.black),
-    ('BOX',(0,0),(-1,-1),2,colors.black),
-    ('BACKGROUND',(0,0),(-1,0),colors.lightgrey),
-    ('ALIGN', (0,1), (0, -1), 'CENTER'),
-    ('VALIGN', (0,1), (0, -1), 'MIDDLE'),
-]
+# TODO
 
 ########### API 
 def make_prog_table(events):
@@ -66,7 +46,6 @@ def make_prog_table(events):
 
 
 styles=getSampleStyleSheet() 
-
 
 from progheader import make_header_table
 def make_show_table(show, use_grey_background=False):
@@ -97,7 +76,6 @@ def make_show_table(show, use_grey_background=False):
         ('BOX', (1,0), (-1,0), .5, colors.black),                
     ]
     
-    is_white = False 
     for hour in range(show.start.hour, (show.start+show.duration+datetime.timedelta(0,59*60)).hour):
         hour %= 24 # in case it starts at 23:00 and goes until 01:00 for example
         
@@ -124,7 +102,28 @@ def make_show_table(show, use_grey_background=False):
     
     return Table(data, cwidths, rheights, tstyles)
 
-
+def make_sign_table(time, is_signon):
+    if  is_signon:
+        label = 'Station Sign-On'
+    else:
+        label = 'Station Sign-Off'
+    
+    para = Paragraph('<b>%s</b>' % label, styles['Normal'])
+    
+    data = [["%02d:%02d" % (time.hour, time.minute), label, '➤'+'_'*14]]
+    cwidths = [.5*inch, 3*inch, 4.05*inch]
+    rheights = [None]
+    tstyles = [
+           ('BOX', (0,0), (-1,-1), 2, colors.black),
+           ('ALIGN', (0,0), (0,0), 'CENTER'),
+           ('ALIGN', (1,0), (1,0), 'LEFT'),
+           ('ALIGN', (-1,0), (-1,0), 'RIGHT'),           
+           ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+           ('GRID', (0,0), (0,-1), .5, colors.black),
+           #('BOX', (1,0), (-1,0), .5, colors.black),                
+    ]
+    return Table(data, cwidths, rheights, tstyles)  
+    
 
 def make_day_tables(showsAndEvents):    
     '''
@@ -135,11 +134,11 @@ def make_day_tables(showsAndEvents):
     for i, obj in enumerate(showsAndEvents):
         if isinstance(obj, model.show):            
             tables.append(make_show_table(obj, i%2))
-            tables.append(Spacer(0,10))
         if isinstance(obj, model.signon):
-            print 'signon'
+            tables.append(make_sign_table(obj.time, True))            
         if isinstance(obj, model.signoff):
-            print 'signoff'
+            tables.append(make_sign_table(obj.time, False))            
+        tables.append(Spacer(0,10))
     
     return tables
 
