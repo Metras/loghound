@@ -74,9 +74,9 @@ BLANK_ENGINEER_RINDENT = 70
 #### these widths, they'll be truncated to blanks and the engineer will
 #### need to write them in manually. this is to prevent crowding and wrapping --
 #### a serious problem with the current logs. 
-MAX_ANNOUNCER_CHARS = 60
-MAX_PRODUCER_CHARS = 60
-MAX_ENGINEER_CHARS = 30
+MAX_ANNOUNCER_WIDTH = 250
+MAX_PRODUCER_WIDTH  = 250
+MAX_ENGINEER_WIDTH  = 170
 # note: max char bookkeeping is not the best way to go. max rendered widths  
 # would be better, as it's insenstive to changes in font and style.
 # (see note above on challenges.)
@@ -101,22 +101,29 @@ def make_header_table(show):
         # issue warning
         print "warning: this show's name might be too long: "+show.name
     
-    def truncate_if_needed(s, chars):
+    def truncate_if_needed(s, maxwidth, makeparagraph, singular_label, plural_label):
         # if something is too big to fit in the table,
         # return an empty string instead. 
         #
         # note: it'd be better to use the actual rendering
         # size than the character length. see note above:
         # i couldn't get it working for paragraphs. 
+	def width(p):
+	  p.wrap(1e10,None)
+	  return sum(p.getActualLineWidths0())
       	if type(s) == unicode:
-          if len(s) > chars:
-              print "cutting this string because it's too long: "+s
-              return s[:chars-3] + "..."
-          else:
-              return s
+	  i = len(s)
+	  if width(makeparagraph(singular_label, s)) > maxwidth:
+	    i -= 1
+	    while i>0 and width(makeparagraph(singular_label, s[:i] + "...")) > maxwidth:
+	      i -= 1
+	    if i == 0:
+	      return makeparagraph(singular_label, "")
+	    return makeparagraph(singular_label, s[:i] + "...")
+	  return makeparagraph(singular_label, s)
         else:
           i = 0
-          return [(i, st) for i, st in map(lambda i: (i, ", ".join(s[:i]) + ((i < len(s) and ", <i>et al</i>") or "")), xrange(len(s)+1)) if len(st) < chars][-1][1]
+          return [st for st in map(lambda i: makeparagraph(((i==1) and singular_label) or plural_label, ", ".join(s[:i] + ((i < len(s) and ["<i>et al</i>"]) or []))), xrange(len(s)+1)) if width(st) <= maxwidth][-1]
         
     def make_field(label, value, align='left'):
         if not value.strip():
@@ -128,7 +135,8 @@ def make_header_table(show):
         else:
             extra_attrs = ''
         text = '<para align=%s %s><i>%s:</i> %s</para>' % (align, extra_attrs, label, value)
-        return Paragraph(text, STYLES['Normal'])                 
+        p = Paragraph(text, STYLES['Normal'])
+	return p
     
     def make_title(name):
         if len(name) < MAX_SHOW_CHARS:            
@@ -140,20 +148,11 @@ def make_header_table(show):
             '<para size="%d"><b>%s</b></para>' % (fontsize, name),
             STYLES['Normal'])
         
-    # get plurals right
-    producer_label = ',' in show.producer and 'Producers' or 'Producer'
-    announcer_label = ',' in show.announcer and 'Announcers' or 'Announcer'
-    
     title = make_title(show.getXmlSafeName())
     
-    engineer = make_field('Engineer', 
-        truncate_if_needed(show.engineer, MAX_ENGINEER_CHARS))
-    
-    producer = make_field(producer_label, 
-        truncate_if_needed(show.producer, MAX_PRODUCER_CHARS))
-    
-    announcer = make_field(announcer_label,
-        truncate_if_needed(show.announcer, MAX_ANNOUNCER_CHARS))
+    engineer  = truncate_if_needed(show.engineer, MAX_ENGINEER_WIDTH, lambda l,v: make_field(l, v), "Engineer", "Engineers")
+    producer  = truncate_if_needed(show.producer, MAX_PRODUCER_WIDTH, lambda l,v: make_field(l, v), "Producer", "Producers")
+    announcer = truncate_if_needed(show.announcer, MAX_ANNOUNCER_WIDTH, lambda l,v: make_field(l, v), "Announcer", "Announcers")
     
     data = [
         [title, engineer],            
