@@ -88,7 +88,7 @@ import random
 
 # which dates should have an EAS test?
 easDays = [random.sample(dlist, 1)[0] for dlist in [[d for d in dates[i:i+7] if d.strftime("%A") != "Sunday"] for i in xrange(len(dates)/7)] if len(dlist) > 0]
-print easDays
+#print easDays
 
 # check the tower lights at civil twilight
 import twilight
@@ -107,7 +107,7 @@ for date in dates:
 # and twilight too close together.
   if date in easDays:
     easDateTime = date + datetime.timedelta(0, random.randrange(8,twilightTime.hour)*60*60+30*60)
-    print easDateTime
+#    print easDateTime
     opEvents[date].append((easDateTime, "CONDUCT REQUIRED WEEKLY EAS TEST"))
 
 # FOURTH, produce the pdf

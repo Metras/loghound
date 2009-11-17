@@ -116,7 +116,7 @@ def make_header_table(show):
               return s
         else:
           i = 0
-          return [(i, st) for i, st in map(lambda i: (i, ", ".join(s[:i]) + ((i < len(s) and "..." ) or "")), xrange(len(s)+1)) if len(st) < chars][-1][1]
+          return [(i, st) for i, st in map(lambda i: (i, ", ".join(s[:i]) + ((i < len(s) and ", <i>et al</i>") or "")), xrange(len(s)+1)) if len(st) < chars][-1][1]
         
     def make_field(label, value, align='left'):
         if not value.strip():
