@@ -55,7 +55,7 @@ if True:
 else:
   print "Using cached schedule (probably not what you want)...",
   sys.stdout.flush()
-  sched_raw = "".join(codecs.open("templogs.php", "r", "iso-8859-1" ).readlines())
+  sched_raw = "".join(codecs.open("templogs_sample", "r", "iso-8859-1" ).readlines())
   print "Done."
 
 timestrtodelta = lambda timestr: datetime.timedelta(0, sum(map(lambda x,y: int(x)*y, timestr.split(":"), [60*60,60])))
