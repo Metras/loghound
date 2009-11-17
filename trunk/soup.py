@@ -84,11 +84,31 @@ for date_str in schedule:
 
 # THIRD, compute other events that will occur on a particular day
 
+import random
+
+# which dates should have an EAS test?
+easDays = [random.sample(dlist, 1)[0] for dlist in [[d for d in dates[i:i+7] if d.strftime("%A") != "Sunday"] for i in xrange(len(dates)/7)] if len(dlist) > 0]
+print easDays
+
+# check the tower lights at civil twilight
 import twilight
 
 twilights = map(twilight.twilight, dates)
 for date in dates:
-  opEvents[date].append((twilight.twilight(date), "CHECK TOWER LIGHTS: READING ="))
+  twilightTime = twilight.twilight(date)
+  opEvents[date].append((twilightTime, "CHECK TOWER LIGHTS: READING ="))
+
+# random EAS check once per week (taken from last version)
+# EAS tests must be conducted between 8:30 AM and twilight.
+# It is by WMBR convention that they are conducted at half
+# past an hour.  To be conservative, I also bring back the
+# late limit to half-past the previous hour from twilight,
+# thus avoiding any issues involving having the EAS test
+# and twilight too close together.
+  if date in easDays:
+    easDateTime = date + datetime.timedelta(0, random.randrange(8,twilightTime.hour)*60*60+30*60)
+    print easDateTime
+    opEvents[date].append((easDateTime, "CONDUCT REQUIRED WEEKLY EAS TEST"))
 
 # FOURTH, produce the pdf
 
