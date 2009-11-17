@@ -67,7 +67,6 @@ for date_str in schedule:
   day   = int(date_str.split("-")[2])
   date = datetime.datetime(year,month,day)
   for show in schedule[date_str]:
-    show["type"] = "show"
     if show["type"] == "show":
       progEvents[date].append(model.show(
         show["show_name"],
@@ -184,10 +183,10 @@ for date in dates:
   Elements.append(flowables.DocAssign("currentMonth", date.month))
   Elements.append(flowables.DocAssign("currentDay",   date.day))
   tables = tablegen.make_day_tables(opEvents[date])
+  Elements.append(NextPageTemplate('OTALogPage'))
+  Elements.append(PageBreak())
+  Elements.append(SigPage())
   for table in tables:
-    Elements.append(NextPageTemplate('OTALogPage'))
-    Elements.append(PageBreak())
-    Elements.append(SigPage())
     Elements.append(NextPageTemplate('OpLogPage'))
     Elements.append(PageBreak())
     Elements.append(table)
