@@ -53,7 +53,7 @@ def make_show_table(show, use_grey_background=False, include_signon=False, inclu
     cwidths = [.5*inch, .75*inch, 1.25*inch, 3.8*inch, 1.25*inch]
     
     start = show.start.strftime("%H:%M")
-    end = (show.start+show.duration).strftime("%H:%M")
+    end   = show.end  .strftime("%H:%M")
         
     hour_range = "%s\n–\n%s" % (start, end)
     header = make_header_table(show)
@@ -77,7 +77,7 @@ def make_show_table(show, use_grey_background=False, include_signon=False, inclu
     ]
     
     start_hour = show.start.hour
-    end_hour = (show.start + show.duration).hour
+    end_hour   = show.end  .hour
     if (end_hour < 12) and (start_hour > 12):
          end_hour += 24
              
@@ -103,7 +103,7 @@ def make_show_table(show, use_grey_background=False, include_signon=False, inclu
           ])
     
     if include_signoff:
-        row, new_styles = make_signoff_row(show.start + show.duration, row=len(data))        
+        row, new_styles = make_signoff_row(show.end, row=len(data))        
         data.append(row)
         tstyles.extend(new_styles)        
         

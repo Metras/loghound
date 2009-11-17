@@ -76,7 +76,7 @@ BLANK_ENGINEER_RINDENT = 70
 #### a serious problem with the current logs. 
 MAX_ANNOUNCER_CHARS = 60
 MAX_PRODUCER_CHARS = 60
-MAX_ENGINEER_CHARS = 20
+MAX_ENGINEER_CHARS = 30
 # note: max char bookkeeping is not the best way to go. max rendered widths  
 # would be better, as it's insenstive to changes in font and style.
 # (see note above on challenges.)
@@ -108,11 +108,15 @@ def make_header_table(show):
         # note: it'd be better to use the actual rendering
         # size than the character length. see note above:
         # i couldn't get it working for paragraphs. 
-        if len(s) > chars:
-            print "cutting this string because it's too long: "+s
-            return ''
+      	if type(s) == unicode:
+          if len(s) > chars:
+              print "cutting this string because it's too long: "+s
+              return s[:chars-3] + "..."
+          else:
+              return s
         else:
-            return s
+          i = 0
+          return [(i, st) for i, st in map(lambda i: (i, ", ".join(s[:i]) + ((i < len(s) and "..." ) or "")), xrange(len(s)+1)) if len(st) < chars][-1][1]
         
     def make_field(label, value, align='left'):
         if not value.strip():

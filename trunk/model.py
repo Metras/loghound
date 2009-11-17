@@ -4,21 +4,21 @@ class show:
     '''
     a record class for radio shows as they appear in the programming logs.
     '''
-    def __init__(self, name, start, duration, engineer, producer, announcer):
+    def __init__(self, name, start, end, engineer, producer, announcer):
         '''
         parameters: 
         
         name - string - name of the radio show as appears in the program guide
         start - integer between 0 and 23: the hour the show starts 
-        duration - integer: hours
+        end   - integer: hours
         engineer - string
         producer/announcer - string. use commas to separate multiple people.
         '''
-        self.name = name
-        self.start = start 
-        self.duration = duration
-        self.engineer = engineer
-        self.producer = producer
+        self.name      = name
+        self.start     = start 
+        self.end       = end
+        self.engineer  = engineer
+        self.producer  = producer
         self.announcer = announcer
         # note: using a datetime for self.start doesn't make sense to
         # me, because self.start represents a periodic starting time,

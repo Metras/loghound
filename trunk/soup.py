@@ -45,92 +45,43 @@ import urllib
 import sys
 import codecs
 import model
+import json
 
-if False:
+if True:
   print "Downloading schedule...",
   sys.stdout.flush()
-  sched_raw = unicode(urllib.urlopen('http://wmbr.org/cgi-bin/prog_log_input').read(), "iso-8859-1")
+  sched_raw = unicode(urllib.urlopen('http://www.wmbr.org/~lowe/templogs.php?start_year=%d&start_month=%d&start_day=%d&num_days=%d' % (year,month,day,numdays)).read(), "iso-8859-1")
   print "Done."
 else:
   print "Using cached schedule (probably not what you want)...",
   sys.stdout.flush()
-  sched_raw = "".join(codecs.open( "prog_log_input", "r", "iso-8859-1" ).readlines())
+  sched_raw = "".join(codecs.open("templogs.php", "r", "iso-8859-1" ).readlines())
   print "Done."
 
-# remove /* comments */
-while sched_raw.find("/*") > -1:
-  sidx = sched_raw       .find("/*")
-  eidx = sched_raw[sidx:].find("*/")
-  if eidx == -1:
-    break
-  eidx += sidx + 2
-  sched_raw = sched_raw[:sidx] + sched_raw[eidx:]
+timestrtodelta = lambda timestr: datetime.timedelta(0, sum(map(lambda x,y: int(x)*y, timestr.split(":"), [60*60,60])))
 
-sched_raw = ("".join(sched_raw.split("\\"))).split('\n')
-
-schedule = {}
-lidx = 0
-current_time = None
-
-str_to_td = lambda s: datetime.timedelta(0,sum(map(lambda x,y: x*y, [3600,60], map(lambda z: int(z.strip()), s.split(":")))))
-
-while lidx < len(sched_raw):
-  line = sched_raw[lidx]
-  if line in ['Sunday:', 'Monday:', 'Tuesday:', 'Wednesday:', 'Thursday:', 'Friday:', 'Saturday:']:
-    day = line[:-1]
-    schedule[day] = []
-    current_time = datetime.timedelta(0)
-  elif line[3:13] == "first_show":
-    schedule[day].append(("first_show", line[14:]))
-    current_time = str_to_td(line[14:])
-  elif line[3: 7] == "show":
-    args = line[3:].split("   ")
-    schedule[day].append(("show", args[1], args[2][2:-1].split('","')))
-    duration = str_to_td(args[1])
-    data = tuple(args[2][2:-1].split('","'))
-    name = data[0]
-    producer = data[1]
-    announcer = data[2]
-    engineer = data[3]
-    for date in progEvents:
-      if date.strftime("%A") == day:
-	progEvents[date].append(model.show(
-          name,
-	  date+current_time,
-          duration,
-          engineer,
-          producer,
-          announcer))
-    current_time += duration
-  elif line[3:10] == "signoff":
-    schedule[day].append(("signoff",))
-    for date in opEvents:
-      if date.strftime("%A") == day:
-        opEvents[date].append((date + current_time, 'TURN OFF TRANSMITTER'))
-	progEvents[date].append(model.signoff(date+current_time))
-  elif line[3: 9] == "signon":
-    schedule[day].append(("signon", line[9:].strip()))
-    current_time = str_to_td(line[9:].strip())
-    for date in opEvents:
-      if date.strftime("%A") == day:
-        opEvents[date].append((date + current_time, 'TEST EAS LIGHTS AND TURN ON TRANSMITTER'))
-	progEvents[date].append(model.signon(date+current_time))
-  elif line       == "end":
-    pass
-  elif line[ : 9] == "alt_shows":
-    schedule[day].append(("alt_show", line[9:18].strip(), sched_raw[lidx][19:-1].split('","'), sched_raw[lidx+1][19:-1].split('","')))
-    duration = str_to_td(line[9:18].strip())
-    for date in progEvents:
-      if date.strftime("%A") == day:
-#	progEvents[date].append((date+current_time, "altshow", duration, sched_raw[lidx][19:-1].split('","'), sched_raw[lidx+1][19:-1].split('","')))
-        pass
-    current_time += duration
-    lidx += 1
-  elif len(line.strip()) == 0:
-    pass # we don't need no empty lines
-  else:
-    print "?? '%s'" % line
-  lidx += 1
+schedule = json.loads(sched_raw)
+for date_str in schedule:
+  year  = int(date_str.split("-")[0])
+  month = int(date_str.split("-")[1])
+  day   = int(date_str.split("-")[2])
+  date = datetime.datetime(year,month,day)
+  for show in schedule[date_str]:
+    show["type"] = "show"
+    if show["type"] == "show":
+      progEvents[date].append(model.show(
+        show["show_name"],
+        date+timestrtodelta(show["start_time"]),
+        date+timestrtodelta(show["end_time"]),
+        show["engineer"],
+        show["producers"],
+        show["announcers"]))
+    elif show["type"] == "signoff":
+      opEvents[date].append((date+timestrtodelta(show["time"]), 'TURN OFF TRANSMITTER'))
+      progEvents[date].append(model.signoff(date+timestrtodelta(show["time"])))
+    elif show["type"] == "signon":
+      opEvents[date].append((date+timestrtodelta(show["time"]), 'TEST EAS LIGHTS AND TURN ON TRANSMITTER'))
+      progEvents[date].append(model.signon(date+timestrtodelta(show["time"])))
 
 # THIRD, compute other events that will occur on a particular day
 
