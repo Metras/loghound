@@ -92,7 +92,7 @@ def make_show_table(show, use_grey_background=False, include_signon=False, inclu
         if False:
             pass
         else:
-          psa_or_promo = hour % 2 and 'PSA:' or 'Promo:'
+          psa_or_promo = (hour % 2 == 0) and 'PSA:' or 'Promo:'
           data.append(
               ["%02d:00" % (hour), 'Station ID', '➤'+'_'*15, psa_or_promo, '➤'+'_'*14]
           )
