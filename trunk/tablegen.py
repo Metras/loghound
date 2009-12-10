@@ -94,12 +94,17 @@ def make_day_tables(events):
         styles = list(TABLE_BASE_STYLE)
         # start adding...
         for hour in hours:
-            add_hour_row(hour, rows, row_heights)
             for event in events:
                 dt, text = event # dt is a datetime object
-                if hour == dt.hour:
+                if hour == dt.hour and dt.minute == 0:
                     # minor nitpic: dt.strftime forces zero padding. 
                     # use regular ol' sprintf instead
+                    display_time = "%d:00" % dt.hour
+                    add_event_row(display_time,text,rows,row_heights,styles) 
+            add_hour_row(hour, rows, row_heights)
+            for event in events:
+                dt, text = event 
+                if hour == dt.hour and dt.minute != 0:
                     display_time = "%d:%02d" % (dt.hour, dt.minute) 
                     add_event_row(display_time,text,rows,row_heights,styles) 
                             
