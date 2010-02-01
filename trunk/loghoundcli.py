@@ -150,10 +150,12 @@ def generateLogs(argv, printcmd, location="./"):
       canvas.restoreState()
     return _title
   
-  def rulesPage(fname = "op_title.xml"):
+  def rulesPage():
+    import op_title
+
     eltList = []
     paraPrefix = "<para";
-    for elt in "".join(open(fname).readlines()).split(paraPrefix):
+    for elt in op_title.contents.split(paraPrefix):
       if len(elt.strip()) > 0:
         eltList.append(Paragraph(paraPrefix + elt, styles['Normal']))
     data = [

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import Tkinter as tk
+import tkFileDialog
 from TkCalendar import TkCalendar
 from loghoundcli import *
 from time import localtime
@@ -39,11 +40,19 @@ class LogHound(tk.Frame):
     if self.calendar.chosenrow is None:
       self.printcmd("Please select a week.\n")
       return
+    dirname = tkFileDialog.askdirectory(parent=self, initialdir="/", title="Please select a directory to write to")
+    if len(dirname.strip()) == 0:
+      self.printcmd("Please select a directory to write the log to!\n")
+      return
+    self.printcmd("Writing to %s\n" % dirname)
     y,m,d = self.calendar.chosenDay()
     self.printcmd("*"*23 + " log for week starting %4d/%02d/%02d " % (y,m,d) + "*"*23 + "\n")
     self.genButton['state'] = 'disabled'
     def subgen():
-      generateLogs(["tk", y, m, d], self.printcmd)
+      try:
+        generateLogs(["tk", y, m, d], self.printcmd, dirname + "/")
+      except Exception as e:
+	self.printcmd("\n>>>> ERROR: \n " + str(e) + "\n")
       self.genButton['state'] = 'normal'
     genThread = threading.Thread(target=subgen)
     genThread.start()
@@ -53,4 +62,9 @@ if __name__ == '__main__':
   root.title("LogHound")
   c = LogHound(root)
   c.pack()
+  try: 
+      root.tk.call('console', 'hide') 
+  except Tkinter.TclError: 
+      # Some versions of the Tk framework don't have a console object 
+      pass 
   root.mainloop()

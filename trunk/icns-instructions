@@ -5,3 +5,5 @@ inkscape loghound.svg -w 128 -h 128 -e loghound128.png
 inkscape loghound.svg -w 256 -h 256 -e loghound256.png 
 inkscape loghound.svg -w 512 -h 512 -e loghound512.png 
 png2icns loghound.icns loghound16.png loghound32.png loghound48.png loghound128.png loghound256.png loghound512.png
+
+hdiutil create -imagekey zlib-level=9 -srcfolder dist/LogHound.app LogHound.dmg
